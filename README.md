@@ -1,6 +1,6 @@
 # What is this all about?
 
-Recently during a pentest project I've found an interesting way to enumerate Jira users via mentioning (tagging) in the Jira Software Service Desk application. The method is quite simple and obvious and was successfully executed in a killchain, so thx Atlassian!
+Recently during a pentest project I've found an interesting way to enumerate Jira users via mentioning (tagging) in the Jira Software Service Desk application (authenticated!). The method is quite simple and obvious and was successfully executed in a killchain, so thx Atlassian!
 
 I've reported this method and provided all requested information to Atlassian and got response:
 
@@ -16,9 +16,9 @@ I've reported this method and provided all requested information to Atlassian an
 
 _Not applicable_. Welp, not thx Atlassian. Thus, I'm making this not-a-vulnerability note public.
 
-# TLDR
+# TL;DR
 
-1) Login to Service Desk application with Burp (or your preferred tool);
+1) Login to Service Desk application with enabled Burp (or your preferred MitM tool);
 2) Create any issue from existing templates (just start process, no need to actually create it in the system);
 3) In the Issue description mention any user;
 4) Either intercept request `/rest/servicedesk/1/customer/participants/1337/user/search?q=test` or find it in the history and send to the Intruder;
@@ -30,7 +30,7 @@ _Not applicable_. Welp, not thx Atlassian. Thus, I'm making this not-a-vulnerabi
 
 # And what is this Service Desk all about?
 
-Service Desk is a Jira Software application that is installed on Jira to provide access to some functionality to clients without allowing them to view Jira itself. Link [here](https://www.atlassian.com/software/jira/service-management/features/service-desk). 
+AFAIK Jira Service Desk is a Jira Software application that is installed on Jira to provide access to some functionality to clients without allowing them to view Jira itself. Link [here](https://www.atlassian.com/software/jira/service-management/features/service-desk). 
 
 User/client/not-an-attacker who has access to Service Desk may create issue tickets in a way it has been set up by the instance administrators. Also, they can view their tickets and comments, and do all usual issue-stuff. There are some configuration restrictions, that prevent user/client/not-an-attacker from accessing/browsing all Jira Issues, Users, Apps, configurations, etc.
 
@@ -48,6 +48,7 @@ If the user tries to mention `test` user, Service Desk makes a GET request to UR
 ```
 /rest/servicedesk/1/customer/participants/1337/user/search?q=test
 ```
+![](/step1.PNG)
 
 `1337` part here is a project ID configured for the user to be default. This request returns an empty list `[]` and that's why `not-hacker` can't mention(tag) anybody from the application GUI.
 
@@ -55,7 +56,11 @@ Modify the request, bruteforce this ID and eventually you (and `not-hacker` of c
 
 As a result, when `not-hacker` makes the modified request, API returns first 10 users available for mentioning and suitable for our filter `q=test`. Besides it returns some extra info: `id`, `userKey`, `displayName`, `emailAddress`, `avatar` (link to gravatar) and `type` (user/admin). A super useful information for further attacks like password-spraying, bruteforce and social engineering.
 
+![](/step2.PNG)
+
 Just bruteforce `q=[all_alphabet_letters]` and you will get a decent amount of internal Jira users data. That's it. 
+
+![](/step3.PNG)
 
 At the end let's recall Atlassian's answer:
 
